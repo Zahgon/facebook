@@ -26,46 +26,22 @@ type BinaryFile struct {
 }
 
 // Data creates new binary data holder.
-func Data(filename string, source io.Reader) *BinaryData {
-	return &BinaryData{
-		Filename: filename,
-		Source:   source,
-	}
-}
+func Data(filename string, source io.Reader) *BinaryData { _ = "STUB: not implemented"; return nil }
 
 // DataWithContentType creates new binary data holder with arbitrary content type.
 func DataWithContentType(filename string, source io.Reader, contentType string) *BinaryData {
-	return &BinaryData{
-		Filename:    filename,
-		Source:      source,
-		ContentType: contentType,
-	}
+	_ = "STUB: not implemented"
+	return nil
 }
 
 // File creates a binary file holder.
-func File(filename string) *BinaryFile {
-	return &BinaryFile{
-		Filename: filename,
-	}
-}
+func File(filename string) *BinaryFile { _ = "STUB: not implemented"; return nil }
 
 // FileAlias creates a binary file holder and specific a different path for reading.
-func FileAlias(filename, path string) *BinaryFile {
-	return &BinaryFile{
-		Filename: filename,
-		Path:     path,
-	}
-}
+func FileAlias(filename, path string) *BinaryFile { _ = "STUB: not implemented"; return nil }
 
 // FileAliasWithContentType creates a new binary file holder with arbitrary content type.
 func FileAliasWithContentType(filename, path, contentType string) *BinaryFile {
-	if path == "" {
-		path = filename
-	}
-
-	return &BinaryFile{
-		Filename:    filename,
-		Path:        path,
-		ContentType: contentType,
-	}
+	_ = "STUB: not implemented"
+	return nil
 }

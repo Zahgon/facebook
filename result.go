@@ -8,16 +8,9 @@
 package facebook
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
-	"math"
 	"net/http"
 	"reflect"
-	"runtime"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -141,79 +134,20 @@ type (
 
 // MakeResult makes a Result from facebook Graph API response.
 func MakeResult(jsonBytes []byte) (Result, error) {
-	res := Result{}
-	err := makeResult(jsonBytes, &res)
-
-	if err != nil {
-		return nil, err
-	}
-
-	// facebook may return an error
-	return res, res.Err()
+	_ = "STUB: not implemented"
+	return *new(Result), nil
 }
 
-func makeResult(jsonBytes []byte, res interface{}) error {
-	if bytes.Equal(jsonBytes, facebookSuccessJSONBytes) {
-		return nil
-	}
+// facebook may return an error
 
-	jsonReader := bytes.NewReader(jsonBytes)
-	dec := json.NewDecoder(jsonReader)
+func makeResult(jsonBytes []byte, res interface{}) error { _ = "STUB: not implemented"; return nil }
 
-	// issue #19
-	// app_scoped user_id in a post-Facebook graph 2.0 would exceeds 2^53.
-	// use Number instead of float64 to avoid precision lost.
-	dec.UseNumber()
+// issue #19
+// app_scoped user_id in a post-Facebook graph 2.0 would exceeds 2^53.
+// use Number instead of float64 to avoid precision lost.
 
-	err := dec.Decode(res)
-
-	if err != nil {
-		typ := reflect.TypeOf(res)
-
-		if typ != nil {
-			// if res is a slice, jsonBytes may be a facebook error.
-			// try to decode it as Error.
-			kind := typ.Kind()
-
-			if kind == reflect.Ptr {
-				typ = typ.Elem()
-				kind = typ.Kind()
-			}
-
-			if kind == reflect.Array || kind == reflect.Slice {
-				var errRes Result
-				err = makeResult(jsonBytes, &errRes)
-
-				if err != nil {
-					return &UnmarshalError{
-						Payload: jsonBytes,
-						Message: "facebook: fail to parse facebook response",
-						Err:     err,
-					}
-				}
-
-				err = errRes.Err()
-
-				if err == nil {
-					err = &UnmarshalError{
-						Payload: jsonBytes,
-						Message: "facebook: fail to parse facebook response; expect an array but get an object",
-					}
-				}
-
-				return err
-			}
-		}
-
-		return &UnmarshalError{
-			Payload: jsonBytes,
-			Message: "facebook: fail to parse facebook response",
-			Err:     err,
-		}
-	}
-
-	return nil
-}
+// if res is a slice, jsonBytes may be a facebook error.
+// try to decode it as Error.
 
 // Get gets a field from Result.
 //
@@ -226,14 +160,7 @@ func makeResult(jsonBytes []byte, res interface{}) error {
 // It doesn't work with Result which has a key contains dot. Use GetField in this case.
 //
 // Returns nil if field doesn't exist.
-func (res Result) Get(field string) interface{} {
-	if field == "" {
-		return res
-	}
-
-	f := strings.Split(field, ".")
-	return res.get(f)
-}
+func (res Result) Get(field string) interface{} { _ = "STUB: not implemented"; return nil }
 
 // GetField gets a field from Result.
 //
@@ -244,75 +171,20 @@ func (res Result) Get(field string) interface{} {
 // For instance, args of "a", "0", "c" means to read res["a"][0]["c"].
 //
 // Returns nil if field doesn't exist.
-func (res Result) GetField(fields ...string) interface{} {
-	if len(fields) == 0 {
-		return res
-	}
+func (res Result) GetField(fields ...string) interface{} { _ = "STUB: not implemented"; return nil }
 
-	return res.get(fields)
-}
-
-func (res Result) get(fields []string) interface{} {
-	v, ok := res[fields[0]]
-
-	if !ok || v == nil {
-		return nil
-	}
-
-	if len(fields) == 1 {
-		return v
-	}
-
-	value := getValueField(reflect.ValueOf(v), fields[1:])
-
-	if !value.IsValid() {
-		return nil
-	}
-
-	return value.Interface()
-}
+func (res Result) get(fields []string) interface{} { _ = "STUB: not implemented"; return nil }
 
 func getValueField(value reflect.Value, fields []string) reflect.Value {
-	valueType := value.Type()
-	kind := valueType.Kind()
-	field := fields[0]
-
-	switch kind {
-	case reflect.Array, reflect.Slice:
-		// field must be a number.
-		n, err := strconv.ParseUint(field, 10, 0)
-
-		if err != nil {
-			return reflect.Value{}
-		}
-
-		if n >= uint64(value.Len()) {
-			return reflect.Value{}
-		}
-
-		// work around a reflect package pitfall.
-		value = reflect.ValueOf(value.Index(int(n)).Interface())
-
-	case reflect.Map:
-		v := value.MapIndex(reflect.ValueOf(field))
-
-		if !v.IsValid() {
-			return v
-		}
-
-		// get real value type.
-		value = reflect.ValueOf(v.Interface())
-
-	default:
-		return reflect.Value{}
-	}
-
-	if len(fields) == 1 {
-		return value
-	}
-
-	return getValueField(value, fields[1:])
+	_ = "STUB: not implemented"
+	return *new(reflect.Value)
 }
+
+// field must be a number.
+
+// work around a reflect package pitfall.
+
+// get real value type.
 
 // Decode decodes full result to a struct.
 // It only decodes fields defined in the struct.
@@ -349,43 +221,15 @@ func getValueField(value reflect.Value, fields []string) reflect.Value {
 // should not be missing.
 //
 // Returns error if v is not a struct or any required v field name absents in res.
-func (res Result) Decode(v interface{}) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			if _, ok := r.(runtime.Error); ok {
-				panic(r)
-			}
-
-			if errStr, ok := r.(string); ok {
-				err = errors.New(errStr)
-				return
-			}
-
-			if errErr, ok := r.(error); ok {
-				err = errErr
-				return
-			}
-
-			panic(r)
-		}
-	}()
-
-	err = res.decode(reflect.ValueOf(v), "")
-	return
-}
+func (res Result) Decode(v interface{}) (err error) { _ = "STUB: not implemented"; return nil }
 
 // DecodeField decodes a field of result to any type, including struct.
 // Field name format is defined in Result.Get().
 //
 // More details about decoding struct see Result.Decode().
 func (res Result) DecodeField(field string, v interface{}) error {
-	f := res.Get(field)
-
-	if f == nil {
-		return fmt.Errorf("facebook: field '%v' doesn't exist in result", field)
-	}
-
-	return decodeField(reflect.ValueOf(f), reflect.ValueOf(v), field)
+	_ = "STUB: not implemented"
+	return nil
 }
 
 // Err returns an error if Result is a Graph API error.
@@ -401,23 +245,12 @@ func (res Result) DecodeField(field string, v interface{}) error {
 //
 // For more information about Graph API Errors, see
 // https://developers.facebook.com/docs/reference/api/errors/
-func (res Result) Err() error {
-	var err Error
-	e := res.DecodeField("error", &err)
+func (res Result) Err() error { _ = "STUB: not implemented"; return nil }
 
-	// no "error" in result. result is not an error.
-	if e != nil {
-		return nil
-	}
+// no "error" in result. result is not an error.
 
-	// code may be missing in error.
-	// assign a non-zero value to it.
-	if err.Code == 0 {
-		err.Code = ErrCodeUnknown
-	}
-
-	return &err
-}
+// code may be missing in error.
+// assign a non-zero value to it.
 
 // Paging creates a PagingResult for this Result and
 // returns error if the Result cannot be used for paging.
@@ -433,7 +266,8 @@ func (res Result) Err() error {
 //	    }
 //	}
 func (res Result) Paging(session *Session) (*PagingResult, error) {
-	return newPagingResult(session, res)
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 // Batch creates a BatchResult for this result and
@@ -441,934 +275,92 @@ func (res Result) Paging(session *Session) (*PagingResult, error) {
 //
 // See BatchApi document for a sample usage.
 func (res Result) Batch() (*BatchResult, error) {
-	return newBatchResult(res)
+	_ = "STUB: not implemented"
+	return nil,
+
+		// DebugInfo creates a DebugInfo for this result if this result
+		// has "__debug__" key.
+		nil
 }
 
-// DebugInfo creates a DebugInfo for this result if this result
-// has "__debug__" key.
-func (res Result) DebugInfo() *DebugInfo {
-	var info Result
-	err := res.DecodeField(debugInfoKey, &info)
-
-	if err != nil {
-		return nil
-	}
-
-	debugInfo := &DebugInfo{}
-	info.DecodeField("messages", &debugInfo.Messages)
-
-	if proto, ok := info[debugProtoKey]; ok {
-		if v, ok := proto.(string); ok {
-			debugInfo.Proto = v
-		}
-	}
-
-	if header, ok := info[debugHeaderKey]; ok {
-		if v, ok := header.(http.Header); ok {
-			debugInfo.Header = v
-
-			debugInfo.FacebookApiVersion = v.Get(facebookAPIVersionHeader)
-			debugInfo.FacebookDebug = v.Get(facebookDebugHeader)
-			debugInfo.FacebookRev = v.Get(facebookRevHeader)
-		}
-	}
-
-	return debugInfo
-}
+func (res Result) DebugInfo() *DebugInfo { _ = "STUB: not implemented"; return nil }
 
 // UsageInfo returns API usage information, including
 // business use case, app, page, ad account rate limiting.
-func (res Result) UsageInfo() *UsageInfo {
-	if usageInfo, ok := res[usageInfoKey]; ok {
-		if usage, ok := usageInfo.(*UsageInfo); ok {
-			return usage
-		}
-	}
-
-	return nil
-}
+func (res Result) UsageInfo() *UsageInfo { _ = "STUB: not implemented"; return nil }
 
 func (res Result) decode(v reflect.Value, fullName string) error {
-	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
-		v = v.Elem()
-	}
-
-	if v.Kind() != reflect.Struct {
-		return fmt.Errorf("facebook: output value must be a struct")
-	}
-
-	if !v.CanSet() {
-		return fmt.Errorf("facebook: output value cannot be set")
-	}
-
-	var field reflect.Value
-	var fieldInfo reflect.StructField
-	var name, dot string
-	var val interface{}
-	var ok, required bool
-	var err error
-
-	if fullName != "" {
-		dot = "."
-	}
-
-	vType := v.Type()
-	num := vType.NumField()
-
-	for i := 0; i < num; i++ {
-		name = ""
-		required = false
-		field = v.Field(i)
-		fieldInfo = vType.Field(i)
-
-		// parse struct field tag.
-		if fbTag := fieldInfo.Tag.Get("facebook"); fbTag != "" {
-			if fbTag == "-" {
-				continue
-			}
-
-			index := strings.IndexRune(fbTag, ',')
-
-			if index == -1 {
-				name = fbTag
-			} else {
-				name = fbTag[:index]
-
-				if fbTag[index:] == ",required" {
-					required = true
-				}
-			}
-		} else {
-			// compatible with json tag.
-			fbTag = fieldInfo.Tag.Get("json")
-
-			if fbTag == "-" {
-				continue
-			}
-
-			index := strings.IndexRune(fbTag, ',')
-
-			if index == -1 {
-				name = fbTag
-			} else {
-				name = fbTag[:index]
-			}
-		}
-
-		// embedded field is "expanded" when decoding.
-		// special case: treat it as a normal field if the name is not empty.
-		if fieldInfo.Anonymous && name == "" {
-			if err = decodeField(reflect.ValueOf(res), field, fullName); err != nil {
-				return err
-			}
-
-			continue
-		}
-
-		if name == "" {
-			name = camelCaseToUnderScore(fieldInfo.Name)
-		}
-
-		val, ok = res[name]
-
-		if !ok {
-			// check whether the field is required. if so, report error.
-			if required {
-				return fmt.Errorf("cannot find field '%v%v%v' in result", fullName, dot, name)
-			}
-
-			continue
-		}
-
-		if err = decodeField(reflect.ValueOf(val), field, fmt.Sprintf("%v%v%v", fullName, dot, name)); err != nil {
-			return err
-		}
-	}
-
+	_ = "STUB: not implemented"
 	return nil
 }
+
+// parse struct field tag.
+
+// compatible with json tag.
+
+// embedded field is "expanded" when decoding.
+// special case: treat it as a normal field if the name is not empty.
+
+// check whether the field is required. if so, report error.
 
 func decodeField(val reflect.Value, field reflect.Value, fullName string) error {
-	if field.Kind() == reflect.Ptr {
-		// reset Ptr field if val is nil.
-		if !val.IsValid() {
-			if !field.IsNil() && field.CanSet() {
-				field.Set(reflect.Zero(field.Type()))
-			}
-
-			return nil
-		}
-
-		if field.IsNil() {
-			field.Set(reflect.New(field.Type().Elem()))
-		}
-
-		field = field.Elem()
-	}
-
-	if !field.CanSet() {
-		return fmt.Errorf("facebook: field '%v' cannot be decoded; make sure the output value is able to be set", fullName)
-	}
-
-	if !val.IsValid() {
-		return fmt.Errorf("facebook: field '%v' is not a pointer; fail to assign nil to it", fullName)
-	}
-
-	// if field implements Unmarshaler, let field unmarshals data itself.
-	if unmarshaler := indirect(field); unmarshaler != nil {
-		data, err := json.Marshal(val.Interface())
-
-		if err != nil {
-			return fmt.Errorf("facebook: fail to marshal value for field '%v' with error %w", fullName, err)
-		}
-
-		return unmarshaler.UnmarshalJSON(data)
-	}
-
-	kind := field.Kind()
-	fieldType := field.Type()
-	valType := val.Type()
-
-	switch kind {
-	case reflect.Bool:
-		if valType.Kind() == reflect.Bool {
-			field.SetBool(val.Bool())
-		} else {
-			return fmt.Errorf("facebook: field '%v' is not a bool in result", fullName)
-		}
-
-	case reflect.Int8:
-		switch valType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			n := val.Int()
-
-			if n < math.MinInt8 || n > math.MaxInt8 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of int8", fullName)
-			}
-
-			field.SetInt(int64(n))
-
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			n := val.Uint()
-
-			if n > math.MaxInt8 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of int8", fullName)
-			}
-
-			field.SetInt(int64(n))
-
-		case reflect.Float32, reflect.Float64:
-			n := val.Float()
-
-			if n < math.MinInt8 || n > math.MaxInt8 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of int8", fullName)
-			}
-
-			field.SetInt(int64(n))
-
-		case reflect.String:
-			// val is allowed to be used as number only if val is json.Number or field is fb.Int8.
-			if val.Type() != typeOfJSONNumber && fieldType != typeOfInt8 {
-				return fmt.Errorf("facebook: field '%v' value is string, not a number", fullName)
-			}
-
-			n, err := strconv.ParseInt(val.String(), 10, 8)
-
-			if err != nil {
-				return fmt.Errorf("facebook: field '%v' value is not a valid int8", fullName)
-			}
-
-			field.SetInt(n)
-
-		default:
-			return fmt.Errorf("facebook: field '%v' is not an integer in result", fullName)
-		}
-
-	case reflect.Int16:
-		switch valType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			n := val.Int()
-
-			if n < math.MinInt16 || n > math.MaxInt16 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of int16", fullName)
-			}
-
-			field.SetInt(int64(n))
-
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			n := val.Uint()
-
-			if n > math.MaxInt16 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of int16", fullName)
-			}
-
-			field.SetInt(int64(n))
-
-		case reflect.Float32, reflect.Float64:
-			n := val.Float()
-
-			if n < math.MinInt16 || n > math.MaxInt16 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of int16", fullName)
-			}
-
-			field.SetInt(int64(n))
-
-		case reflect.String:
-			// val is allowed to be used as number only if val is json.Number or field is fb.Int16.
-			if val.Type() != typeOfJSONNumber && fieldType != typeOfInt16 {
-				return fmt.Errorf("facebook: field '%v' value is string, not a number", fullName)
-			}
-
-			n, err := strconv.ParseInt(val.String(), 10, 16)
-
-			if err != nil {
-				return fmt.Errorf("facebook: field '%v' value is not a valid int16", fullName)
-			}
-
-			field.SetInt(n)
-
-		default:
-			return fmt.Errorf("facebook: field '%v' is not an integer in result", fullName)
-		}
-
-	case reflect.Int32:
-		switch valType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			n := val.Int()
-
-			if n < math.MinInt32 || n > math.MaxInt32 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of int32", fullName)
-			}
-
-			field.SetInt(int64(n))
-
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			n := val.Uint()
-
-			if n > math.MaxInt32 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of int32", fullName)
-			}
-
-			field.SetInt(int64(n))
-
-		case reflect.Float32, reflect.Float64:
-			n := val.Float()
-
-			if n < math.MinInt32 || n > math.MaxInt32 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of int32", fullName)
-			}
-
-			field.SetInt(int64(n))
-
-		case reflect.String:
-			// val is allowed to be used as number only if val is json.Number or field is fb.Int32.
-			if val.Type() != typeOfJSONNumber && fieldType != typeOfInt32 {
-				return fmt.Errorf("facebook: field '%v' value is string, not a number", fullName)
-			}
-
-			n, err := strconv.ParseInt(val.String(), 10, 32)
-
-			if err != nil {
-				return fmt.Errorf("facebook: field '%v' value is not a valid int32", fullName)
-			}
-
-			field.SetInt(n)
-
-		default:
-			return fmt.Errorf("facebook: field '%v' is not an integer in result", fullName)
-		}
-
-	case reflect.Int64:
-		switch valType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			n := val.Int()
-			field.SetInt(n)
-
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			n := val.Uint()
-
-			if n > math.MaxInt64 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of int64", fullName)
-			}
-
-			field.SetInt(int64(n))
-
-		case reflect.Float32, reflect.Float64:
-			n := val.Float()
-
-			if n < math.MinInt64 || n > math.MaxInt64 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of int64", fullName)
-			}
-
-			field.SetInt(int64(n))
-
-		case reflect.String:
-			// val is allowed to be used as number only if val is json.Number or field is fb.Int64.
-			if val.Type() != typeOfJSONNumber && fieldType != typeOfInt64 {
-				return fmt.Errorf("facebook: field '%v' value is string, not a number", fullName)
-			}
-
-			n, err := strconv.ParseInt(val.String(), 10, 64)
-
-			if err != nil {
-				return fmt.Errorf("facebook: field '%v' value is not a valid int64", fullName)
-			}
-
-			field.SetInt(n)
-
-		default:
-			return fmt.Errorf("facebook: field '%v' is not an integer in result", fullName)
-		}
-
-	case reflect.Int:
-		bits := field.Type().Bits()
-
-		var min, max int64
-
-		if bits == 32 {
-			min = math.MinInt32
-			max = math.MaxInt32
-		} else if bits == 64 {
-			min = math.MinInt64
-			max = math.MaxInt64
-		}
-
-		switch valType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			n := val.Int()
-
-			if n < min || n > max {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of int", fullName)
-			}
-
-			field.SetInt(int64(n))
-
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			n := val.Uint()
-
-			if n > uint64(max) {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of int", fullName)
-			}
-
-			field.SetInt(int64(n))
-
-		case reflect.Float32, reflect.Float64:
-			n := val.Float()
-
-			if n < float64(min) || n > float64(max) {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of int", fullName)
-			}
-
-			field.SetInt(int64(n))
-
-		case reflect.String:
-			// val is allowed to be used as number only if val is json.Number or field is fb.Int.
-			if val.Type() != typeOfJSONNumber && fieldType != typeOfInt {
-				return fmt.Errorf("facebook: field '%v' value is string, not a number", fullName)
-			}
-
-			n, err := strconv.ParseInt(val.String(), 10, bits)
-
-			if err != nil {
-				return fmt.Errorf("facebook: field '%v' value is not a valid int%v", fullName, bits)
-			}
-
-			field.SetInt(n)
-
-		default:
-			return fmt.Errorf("facebook: field '%v' is not an integer in result", fullName)
-		}
-
-	case reflect.Uint8:
-		switch valType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			n := val.Int()
-
-			if n < 0 || n > math.MaxUint8 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of uint8", fullName)
-			}
-
-			field.SetUint(uint64(n))
-
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			n := val.Uint()
-
-			if n > math.MaxUint8 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of uint8", fullName)
-			}
-
-			field.SetUint(uint64(n))
-
-		case reflect.Float32, reflect.Float64:
-			n := val.Float()
-
-			if n < 0 || n > math.MaxUint8 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of uint8", fullName)
-			}
-
-			field.SetUint(uint64(n))
-
-		case reflect.String:
-			// val is allowed to be used as number only if val is json.Number or field is fb.Uint8.
-			if val.Type() != typeOfJSONNumber && fieldType != typeOfUint8 {
-				return fmt.Errorf("facebook: field '%v' value is string, not a number", fullName)
-			}
-
-			n, err := strconv.ParseUint(val.String(), 10, 8)
-
-			if err != nil {
-				return fmt.Errorf("facebook: field '%v' value is not a valid uint8", fullName)
-			}
-
-			field.SetUint(n)
-
-		default:
-			return fmt.Errorf("facebook: field '%v' is not an integer in result", fullName)
-		}
-
-	case reflect.Uint16:
-		switch valType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			n := val.Int()
-
-			if n < 0 || n > math.MaxUint16 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of uint16", fullName)
-			}
-
-			field.SetUint(uint64(n))
-
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			n := val.Uint()
-
-			if n > math.MaxUint16 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of uint16", fullName)
-			}
-
-			field.SetUint(uint64(n))
-
-		case reflect.Float32, reflect.Float64:
-			n := val.Float()
-
-			if n < 0 || n > math.MaxUint16 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of uint16", fullName)
-			}
-
-			field.SetUint(uint64(n))
-
-		case reflect.String:
-			// val is allowed to be used as number only if val is json.Number or field is fb.Uint16.
-			if val.Type() != typeOfJSONNumber && fieldType != typeOfUint16 {
-				return fmt.Errorf("facebook: field '%v' value is string, not a number", fullName)
-			}
-
-			n, err := strconv.ParseUint(val.String(), 10, 16)
-
-			if err != nil {
-				return fmt.Errorf("facebook: field '%v' value is not a valid uint16", fullName)
-			}
-
-			field.SetUint(n)
-
-		default:
-			return fmt.Errorf("facebook: field '%v' is not an integer in result", fullName)
-		}
-
-	case reflect.Uint32:
-		switch valType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			n := val.Int()
-
-			if n < 0 || n > math.MaxUint32 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of uint32", fullName)
-			}
-
-			field.SetUint(uint64(n))
-
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			n := val.Uint()
-
-			if n > math.MaxUint32 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of uint32", fullName)
-			}
-
-			field.SetUint(uint64(n))
-
-		case reflect.Float32, reflect.Float64:
-			n := val.Float()
-
-			if n < 0 || n > math.MaxUint32 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of uint32", fullName)
-			}
-
-			field.SetUint(uint64(n))
-
-		case reflect.String:
-			// val is allowed to be used as number only if val is json.Number or field is fb.Uint32.
-			if val.Type() != typeOfJSONNumber && fieldType != typeOfUint32 {
-				return fmt.Errorf("facebook: field '%v' value is string, not a number", fullName)
-			}
-
-			n, err := strconv.ParseUint(val.String(), 10, 32)
-
-			if err != nil {
-				return fmt.Errorf("facebook: field '%v' value is not a valid uint32", fullName)
-			}
-
-			field.SetUint(n)
-
-		default:
-			return fmt.Errorf("facebook: field '%v' is not an integer in result", fullName)
-		}
-
-	case reflect.Uint64:
-		switch valType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			n := val.Int()
-
-			if n < 0 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of uint64", fullName)
-			}
-
-			field.SetUint(uint64(n))
-
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			n := val.Uint()
-			field.SetUint(n)
-
-		case reflect.Float32, reflect.Float64:
-			n := val.Float()
-
-			if n < 0 || n > math.MaxUint64 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of uint64", fullName)
-			}
-
-			field.SetUint(uint64(n))
-
-		case reflect.String:
-			// val is allowed to be used as number only if val is json.Number or field is fb.Uint64.
-			if val.Type() != typeOfJSONNumber && fieldType != typeOfUint64 {
-				return fmt.Errorf("facebook: field '%v' value is string, not a number", fullName)
-			}
-
-			n, err := strconv.ParseUint(val.String(), 10, 64)
-
-			if err != nil {
-				return fmt.Errorf("facebook: field '%v' value is not a valid uint64", fullName)
-			}
-
-			field.SetUint(n)
-
-		default:
-			return fmt.Errorf("facebook: field '%v' is not an integer in result", fullName)
-		}
-
-	case reflect.Uint:
-		bits := field.Type().Bits()
-
-		var max uint64
-
-		if bits == 32 {
-			max = math.MaxUint32
-		} else if bits == 64 {
-			max = math.MaxUint64
-		}
-
-		switch valType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			n := val.Int()
-
-			if n < 0 || uint64(n) > max {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of uint", fullName)
-			}
-
-			field.SetUint(uint64(n))
-
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			n := val.Uint()
-
-			if n > max {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of uint", fullName)
-			}
-
-			field.SetUint(uint64(n))
-
-		case reflect.Float32, reflect.Float64:
-			n := val.Float()
-
-			if n < 0 || n > float64(max) {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of uint", fullName)
-			}
-
-			field.SetUint(uint64(n))
-
-		case reflect.String:
-			// val is allowed to be used as number only if val is json.Number or field is fb.Uint.
-			if val.Type() != typeOfJSONNumber && fieldType != typeOfUint {
-				return fmt.Errorf("facebook: field '%v' value is string, not a number", fullName)
-			}
-
-			n, err := strconv.ParseUint(val.String(), 10, bits)
-
-			if err != nil {
-				return fmt.Errorf("facebook: field '%v' value is not a valid uint%v", fullName, bits)
-			}
-
-			field.SetUint(n)
-
-		default:
-			return fmt.Errorf("facebook: field '%v' is not an integer in result", fullName)
-		}
-
-	case reflect.Float32:
-		switch valType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			n := val.Int()
-			field.SetFloat(float64(n))
-
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			n := val.Uint()
-			field.SetFloat(float64(n))
-
-		case reflect.Float32, reflect.Float64:
-			n := val.Float()
-
-			if math.Abs(n) > math.MaxFloat32 {
-				return fmt.Errorf("facebook: field '%v' value exceeds the range of float32", fullName)
-			}
-
-			field.SetFloat(n)
-
-		case reflect.String:
-			// val is allowed to be used as number only if val is json.Number or field is fb.Float32.
-			if val.Type() != typeOfJSONNumber && fieldType != typeOfFloat32 {
-				return fmt.Errorf("facebook: field '%v' value is string, not a number", fullName)
-			}
-
-			n, err := strconv.ParseFloat(val.String(), 32)
-
-			if err != nil {
-				return fmt.Errorf("facebook: field '%v' is not a valid float32", fullName)
-			}
-
-			field.SetFloat(n)
-
-		default:
-			return fmt.Errorf("facebook: field '%v' is not a float in result", fullName)
-		}
-
-	case reflect.Float64:
-		switch valType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			n := val.Int()
-			field.SetFloat(float64(n))
-
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			n := val.Uint()
-			field.SetFloat(float64(n))
-
-		case reflect.Float32, reflect.Float64:
-			n := val.Float()
-			field.SetFloat(n)
-
-		case reflect.String:
-			// val is allowed to be used as number only if val is json.Number or field is fb.Float64.
-			if val.Type() != typeOfJSONNumber && fieldType != typeOfFloat64 {
-				return fmt.Errorf("facebook: field '%v' value is string, not a number", fullName)
-			}
-
-			n, err := strconv.ParseFloat(val.String(), 64)
-
-			if err != nil {
-				return fmt.Errorf("facebook: field '%v' is not a valid float64", fullName)
-			}
-
-			field.SetFloat(n)
-
-		default:
-			return fmt.Errorf("facebook: field '%v' is not a float in result", fullName)
-		}
-
-	case reflect.String:
-		if valType.Kind() != reflect.String {
-			return fmt.Errorf("facebook: field '%v' is not a string in result", fullName)
-		}
-
-		field.SetString(val.String())
-
-	case reflect.Struct:
-		if valType.Kind() != reflect.Map || valType.Key().Kind() != reflect.String {
-			return fmt.Errorf("facebook: field '%v' is not a json object in result", fullName)
-		}
-
-		// safe convert val to Result. type assertion doesn't work in this case.
-		var r Result
-		reflect.ValueOf(&r).Elem().Set(val)
-
-		if err := r.decode(field, fullName); err != nil {
-			return err
-		}
-
-	case reflect.Map:
-		if valType.Kind() != reflect.Map || valType.Key().Kind() != reflect.String {
-			return fmt.Errorf("facebook: field '%v' is not a json object in result", fullName)
-		}
-
-		// map key must be string
-		if field.Type().Key().Kind() != reflect.String {
-			return fmt.Errorf("facebook: field '%v' in struct must be a map whose key type is string", fullName)
-		}
-
-		var needAddr bool
-		valueType := field.Type().Elem()
-
-		// shortcut for map[string]interface{}.
-		if valueType.Kind() == reflect.Interface {
-			field.Set(val)
-			break
-		}
-
-		if field.IsNil() {
-			field.Set(reflect.MakeMap(field.Type()))
-		}
-
-		if valueType.Kind() == reflect.Ptr {
-			valueType = valueType.Elem()
-			needAddr = true
-		}
-
-		for _, key := range val.MapKeys() {
-			// val.MapIndex(key) returns a Value with wrong type.
-			// use following trick to get correct Value.
-			value := reflect.ValueOf(val.MapIndex(key).Interface())
-			newValue := reflect.New(valueType)
-
-			if err := decodeField(value, newValue, fmt.Sprintf("%v.%v", fullName, key)); err != nil {
-				return err
-			}
-
-			if needAddr {
-				field.SetMapIndex(key, newValue)
-			} else {
-				field.SetMapIndex(key, newValue.Elem())
-			}
-		}
-
-	case reflect.Slice, reflect.Array:
-		if valType.Kind() != reflect.Slice && valType.Kind() != reflect.Array {
-			return fmt.Errorf("facebook: field '%v' is not a json array in result", fullName)
-		}
-
-		valLen := val.Len()
-
-		if kind == reflect.Array {
-			if field.Len() < valLen {
-				return fmt.Errorf("facebook: cannot copy all field '%v' values to struct; expected len is %v but actual is %v",
-					fullName, field.Len(), valLen)
-			}
-		}
-
-		var slc reflect.Value
-		var needAddr bool
-
-		valueType := field.Type().Elem()
-
-		// shortcut for array of interface
-		if valueType.Kind() == reflect.Interface {
-			if kind == reflect.Array {
-				for i := 0; i < valLen; i++ {
-					field.Index(i).Set(val.Index(i))
-				}
-			} else { // kind is slice
-				field.Set(val)
-			}
-
-			break
-		}
-
-		if kind == reflect.Array {
-			slc = field.Slice(0, valLen)
-		} else {
-			// kind is slice
-			slc = reflect.MakeSlice(field.Type(), valLen, valLen)
-			field.Set(slc)
-		}
-
-		if valueType.Kind() == reflect.Ptr {
-			needAddr = true
-			valueType = valueType.Elem()
-		}
-
-		for i := 0; i < valLen; i++ {
-			// val.Index(i) returns a Value with wrong type.
-			// use following trick to get correct Value.
-			valIndexValue := reflect.ValueOf(val.Index(i).Interface())
-			newValue := reflect.New(valueType)
-
-			if err := decodeField(valIndexValue, newValue, fmt.Sprintf("%v.%v", fullName, i)); err != nil {
-				return err
-			}
-
-			if needAddr {
-				slc.Index(i).Set(newValue)
-			} else {
-				slc.Index(i).Set(newValue.Elem())
-			}
-		}
-
-	default:
-		return fmt.Errorf("facebook: field '%v' in struct uses unsupported type '%v'", fullName, kind)
-	}
-
+	_ = "STUB: not implemented"
 	return nil
 }
+
+// reset Ptr field if val is nil.
+
+// if field implements Unmarshaler, let field unmarshals data itself.
+
+// val is allowed to be used as number only if val is json.Number or field is fb.Int8.
+
+// val is allowed to be used as number only if val is json.Number or field is fb.Int16.
+
+// val is allowed to be used as number only if val is json.Number or field is fb.Int32.
+
+// val is allowed to be used as number only if val is json.Number or field is fb.Int64.
+
+// val is allowed to be used as number only if val is json.Number or field is fb.Int.
+
+// val is allowed to be used as number only if val is json.Number or field is fb.Uint8.
+
+// val is allowed to be used as number only if val is json.Number or field is fb.Uint16.
+
+// val is allowed to be used as number only if val is json.Number or field is fb.Uint32.
+
+// val is allowed to be used as number only if val is json.Number or field is fb.Uint64.
+
+// val is allowed to be used as number only if val is json.Number or field is fb.Uint.
+
+// val is allowed to be used as number only if val is json.Number or field is fb.Float32.
+
+// val is allowed to be used as number only if val is json.Number or field is fb.Float64.
+
+// safe convert val to Result. type assertion doesn't work in this case.
+
+// map key must be string
+
+// shortcut for map[string]interface{}.
+
+// val.MapIndex(key) returns a Value with wrong type.
+// use following trick to get correct Value.
+
+// shortcut for array of interface
+
+// kind is slice
+
+// kind is slice
+
+// val.Index(i) returns a Value with wrong type.
+// use following trick to get correct Value.
 
 // Indirect walks down v allocating pointers as needed until it gets to a non-pointer.
 // If v implements json.Unmarshaler, indrect stops and returns it.
 //
 // This implementation is a modified version of http://golang.org/src/encoding/json/decode.go.
 func indirect(v reflect.Value) json.Unmarshaler {
+	_ = "STUB: not implemented"
 	// if v is a struct field and v's pointer may implement json.Unmarshaler,
 	// try to discover this case.
-	if v.Kind() != reflect.Ptr && v.Type().Name() != "" && v.CanAddr() {
-		v = v.Addr()
-	}
-
-	for {
-		if v.Kind() == reflect.Interface && !v.IsNil() {
-			e := v.Elem()
-
-			if e.Kind() == reflect.Ptr && !e.IsNil() && e.Elem().Kind() == reflect.Ptr {
-				v = e
-				continue
-			}
-		}
-
-		if v.Kind() != reflect.Ptr {
-			break
-		}
-
-		if v.Elem().Kind() != reflect.Ptr && v.CanSet() {
-			break
-		}
-
-		if v.IsNil() {
-			v.Set(reflect.New(v.Type().Elem()))
-		}
-
-		if v.Type().NumMethod() > 0 {
-			if u, ok := v.Interface().(json.Unmarshaler); ok {
-				return u
-			}
-		}
-
-		v = v.Elem()
-	}
-
-	if v.Type().NumMethod() > 0 {
-		if u, ok := v.Interface().(json.Unmarshaler); ok {
-			return u
-		}
-	}
-
-	return nil
+	return *new(json.Unmarshaler)
 }

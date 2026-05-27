@@ -7,10 +7,6 @@
 
 package facebook
 
-import (
-	"fmt"
-)
-
 // Error represents Facebook API error.
 type Error struct {
 	Message      string
@@ -24,10 +20,7 @@ type Error struct {
 }
 
 // Error returns error string.
-func (e *Error) Error() string {
-	return fmt.Sprintf("facebook: %s (code: %d; error_subcode: %d, error_user_title: %s, error_user_msg: %s)",
-		e.Message, e.Code, e.ErrorSubcode, e.UserTitle, e.UserMessage)
-}
+func (e *Error) Error() string { _ = "STUB: not implemented"; return "" }
 
 // UnmarshalError represents a json decoder error.
 type UnmarshalError struct {
@@ -36,6 +29,4 @@ type UnmarshalError struct {
 	Err     error  // The error returned by json decoder. It can be nil.
 }
 
-func (e *UnmarshalError) Error() string {
-	return fmt.Sprintf("%s [err:%v]", e.Message, e.Err)
-}
+func (e *UnmarshalError) Error() string { _ = "STUB: not implemented"; return "" }

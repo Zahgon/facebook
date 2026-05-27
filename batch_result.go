@@ -7,11 +7,6 @@
 
 package facebook
 
-import (
-	"encoding/json"
-	"net/http"
-)
-
 type batchResultHeader struct {
 	Name  string `facebook:",required"`
 	Value string `facebook:",required"`
@@ -23,30 +18,6 @@ type batchResultData struct {
 	Body    string `facebook:",required"`
 }
 
-func newBatchResult(res Result) (*BatchResult, error) {
-	var data batchResultData
-	err := res.Decode(&data)
+func newBatchResult(res Result) (*BatchResult, error) { _ = "STUB: not implemented"; return nil, nil }
 
-	if err != nil {
-		return nil, err
-	}
-
-	result := &BatchResult{
-		StatusCode: data.Code,
-		Header:     http.Header{},
-		Body:       data.Body,
-	}
-
-	err = json.Unmarshal([]byte(result.Body), &result.Result)
-
-	if err != nil {
-		return nil, err
-	}
-
-	// add headers to result.
-	for _, header := range data.Headers {
-		result.Header.Add(header.Name, header.Value)
-	}
-
-	return result, nil
-}
+// add headers to result.
